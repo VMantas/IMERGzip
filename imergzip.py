@@ -13,8 +13,8 @@ import geocoder
 
 def zip_to_coords(zipcode):
     # Use geocoder to get latitude and longitude for a ZIP code
-     g = geocoder.osm(zipcode, user_agent="demoinergzip")
-    g = geocoder.osm(zipcode)
+    g = geocoder.osm(zipcode, user_agent="demoinergzip")
+    #g = geocoder.osm(zipcode)
     if g.ok:
         return g.latlng  # Returns [latitude, longitude]
     return None
