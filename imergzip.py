@@ -32,7 +32,7 @@ def extract_mean_from_geotiff(lat, lon, geotiff_url):
 st.title("GeoTIFF Mean Value Extractor")
 
 # URL of your GeoTIFF file on GitHub
-geotiff_url = "https://raw.githubusercontent.com/your_username/your_repo/main/Data/your_geotiff_file.tif"
+geotiff_url = "https://github.com/VMantas/IMERGzip/blob/Central1/Data/January%20IMERGF%20Mean.tif"
 st.write(f"Using GeoTIFF file from: {geotiff_url}")
 
 zipcode = st.text_input("Enter a ZIP code:")
