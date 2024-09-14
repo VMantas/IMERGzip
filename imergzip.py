@@ -9,11 +9,13 @@ import numpy as np
 from geopy.geocoders import Nominatim
 
 # Function to convert ZIP code to coordinates using geopy and Nominatim
+import geocoder
+
 def zip_to_coords(zipcode):
-    geolocator = Nominatim(user_agent="geoapi")
-    location = geolocator.geocode(zipcode)
-    if location:
-        return location.latitude, location.longitude
+    # Use geocoder to get latitude and longitude for a ZIP code
+    g = geocoder.osm(zipcode)
+    if g.ok:
+        return g.latlng  # Returns [latitude, longitude]
     return None
 
 # Function to extract mean value from GeoTIFF for given coordinates
