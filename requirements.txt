@@ -4,3 +4,4 @@ rasterio
 shapely
 uszipcode
 requests
+numpy
