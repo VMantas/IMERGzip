@@ -6,7 +6,7 @@ from shapely.geometry import Point
 import uszipcode
 import requests
 from io import BytesIO
-from streamlit_extras.react_component import react_component
+from pool_fill_component import st_pool_fill
 
 # Initialize the zip code search engine
 search = uszipcode.SearchEngine()
@@ -18,11 +18,10 @@ def zip_to_coords(zipcode):
         return result.lat, result.lng
     return None
 
-# Function to extract data from GeoTIFF (local or remote)
+# Function to extract data from GeoTIFF (GitHub or local)
 def extract_from_geotiff(lat, lon, geotiff_url):
     point = Point(lon, lat)
     
-    # If the URL is a local file path, open it directly
     if geotiff_url.startswith(('http://', 'https://')):
         response = requests.get(geotiff_url)
         with rasterio.open(BytesIO(response.content)) as src:
@@ -40,10 +39,13 @@ st.set_page_config(page_title="GeoTIFF Data Visualization", layout="centered")
 
 st.title("GeoTIFF Data Visualization with Pool Fill")
 
-zipcode = st.text_input("Enter a ZIP code:")
-geotiff_url = "https://github.com/VMantas/IMERGzip/blob/Central1/Data/January%20IMERGF%20Mean.tif" #st.text_input("Enter the URL or local path to your GeoTIFF file:")
+# Assuming the GeoTIFF file is in the Data folder of your GitHub repository
+geotiff_url = "https://github.com/VMantas/IMERGzip/blob/Central1/Data/January%20IMERGF%20Mean.tif"
+st.write(f"Using GeoTIFF file from: {geotiff_url}")
 
-if zipcode and geotiff_url:
+zipcode = st.text_input("Enter a ZIP code:")
+
+if zipcode:
     coords = zip_to_coords(zipcode)
     if coords:
         lat, lon = coords
@@ -60,9 +62,9 @@ if zipcode and geotiff_url:
             normalized_value = ((value - min_value) / (max_value - min_value)) * 100
             normalized_value = max(0, min(normalized_value, 100))  # Ensure it's between 0 and 100
             
-            # Display the pool visualization
+            # Display the pool visualization using the custom component
             st.write("Pool fill based on GeoTIFF data:")
-            react_component("PoolFill", props={"initialFillPercentage": normalized_value})
+            st_pool_fill(normalized_value)
             
         except Exception as e:
             st.error(f"Error extracting data from GeoTIFF: {str(e)}")
@@ -71,7 +73,5 @@ if zipcode and geotiff_url:
 
 st.write("""
 This app extracts data from a GeoTIFF file based on a given ZIP code and visualizes it as a pool fill level.
-Enter a ZIP code and the URL or path to a GeoTIFF file to see the result.
+Enter a ZIP code to see the result.
 """)
-
-st.write("Note: This app requires the `streamlit-extras`, `geopandas`, `rasterio`, `shapely`, and `uszipcode` packages.")
