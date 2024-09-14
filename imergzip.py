@@ -24,15 +24,24 @@ def extract_mean_from_geotiff(lat, lon, geotiff_url):
     
     response = requests.get(geotiff_url)
     with rasterio.open(BytesIO(response.content)) as src:
+        # Convert the point to the same CRS as the GeoTIFF file
         geom = gpd.GeoDataFrame(geometry=[point], crs="EPSG:4326").to_crs(src.crs)
+        
+        # Mask the raster using the geometry and extract the pixel values
         out_image, out_transform = mask(src, geom.geometry, crop=True)
-        return np.mean(out_image)
+        
+        # Handle no-data values and compute mean
+        out_image = out_image[~np.isnan(out_image)]
+        if out_image.size > 0:
+            return np.mean(out_image)
+        else:
+            return None
 
 # Streamlit app
 st.title("GeoTIFF Mean Value Extractor")
 
-# URL of your GeoTIFF file on GitHub
-geotiff_url = "https://github.com/VMantas/IMERGzip/blob/Central1/Data/January%20IMERGF%20Mean.tif"
+# Corrected URL to the raw GeoTIFF file
+geotiff_url = "https://raw.githubusercontent.com/VMantas/IMERGzip/Central1/Data/January%20IMERGF%20Mean.tif"
 st.write(f"Using GeoTIFF file from: {geotiff_url}")
 
 zipcode = st.text_input("Enter a ZIP code:")
@@ -45,7 +54,10 @@ if zipcode:
         
         try:
             mean_value = extract_mean_from_geotiff(lat, lon, geotiff_url)
-            st.write(f"Mean value extracted from GeoTIFF: {mean_value:.4f}")
+            if mean_value is not None:
+                st.write(f"Mean value extracted from GeoTIFF: {mean_value:.4f}")
+            else:
+                st.error("No valid data found in the specified location.")
         except Exception as e:
             st.error(f"Error extracting data from GeoTIFF: {str(e)}")
     else:
