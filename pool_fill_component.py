@@ -44,14 +44,6 @@ ReactDOM.render(
 """
 
 # Function to create the custom component
-def pool_fill(initial_fill_percentage):
-    component = components.declare_component(
-        "pool_fill",
-        path=".",  # This is required for Streamlit Cloud
-    )
-    return component(initialFillPercentage=initial_fill_percentage)
-
-# Helper function to use in the main app
 def st_pool_fill(initial_fill_percentage):
     components.html(
         f"""
