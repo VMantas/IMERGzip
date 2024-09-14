@@ -41,7 +41,7 @@ st.set_page_config(page_title="GeoTIFF Data Visualization", layout="centered")
 st.title("GeoTIFF Data Visualization with Pool Fill")
 
 zipcode = st.text_input("Enter a ZIP code:")
-geotiff_url = st.text_input("Enter the URL or local path to your GeoTIFF file:")
+geotiff_url = "https://github.com/VMantas/IMERGzip/blob/Central1/Data/January%20IMERGF%20Mean.tif" #st.text_input("Enter the URL or local path to your GeoTIFF file:")
 
 if zipcode and geotiff_url:
     coords = zip_to_coords(zipcode)
