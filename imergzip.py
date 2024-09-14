@@ -1,78 +1,56 @@
+import os
+import ee
 import streamlit as st
-import geopandas as gpd
-import rasterio
-from rasterio.mask import mask
-from shapely.geometry import Point
-import requests
-from io import BytesIO
+from PIL import Image
 import numpy as np
-from geopy.geocoders import Nominatim
+import io
 
-# Function to convert ZIP code to coordinates using geopy and Nominatim
-import geocoder
+# Initialize Earth Engine with environment variable
+def initialize_earth_engine():
+    auth_token = os.getenv('EARTHENGINE_AUTH_TOKEN')
+    if auth_token:
+        ee.Authenticate(token=auth_token)
+    ee.Initialize()
 
-def zip_to_coords(zipcode):
-    # Use geocoder to get latitude and longitude for a ZIP code
-    g = geocoder.osm(zipcode, user_agent="demoinergzip")
-    #g = geocoder.osm(zipcode)
-    if g.ok:
-        return g.latlng  # Returns [latitude, longitude]
-    return None
+# Function to get an Earth Engine image
+def get_earth_engine_image():
+    # Define a region of interest (ROI) and date range
+    roi = ee.Geometry.Polygon([[
+        [-122.6, 37.5],
+        [-122.3, 37.5],
+        [-122.3, 37.8],
+        [-122.6, 37.8]
+    ]])
+    date_range = ee.DateRange('2022-01-01', '2022-01-31')
 
-# Function to extract mean value from GeoTIFF for given coordinates
-def extract_mean_from_geotiff(lat, lon, geotiff_url):
-    point = Point(lon, lat)
-    
-    response = requests.get(geotiff_url)
-    if response.status_code == 200:
-        with rasterio.open(BytesIO(response.content)) as src:
-            geom = gpd.GeoDataFrame(geometry=[point], crs="EPSG:4326").to_crs(src.crs)
-            out_image, out_transform = mask(src, geom.geometry, crop=True)
-            
-            # Filter out NoData values
-            out_image = out_image[~np.isnan(out_image)]
-            
-            # Compute mean value if valid data exists
-            if out_image.size > 0:
-                return np.mean(out_image)
-            else:
-                return None
-    else:
-        st.error("Failed to retrieve GeoTIFF from the provided URL.")
-        return None
+    # Load a Sentinel-2 image
+    image = ee.ImageCollection('COPERNICUS/S2') \
+        .filterBounds(roi) \
+        .filterDate(date_range) \
+        .median()
+
+    # Select a specific band (e.g., true color)
+    image = image.select(['B4', 'B3', 'B2'])
+
+    # Convert the image to a numpy array
+    image_url = image.getThumbURL({'min': 0, 'max': 3000, 'dimensions': 512})
+    response = ee.data.getTile(image_url)
+    img = Image.open(io.BytesIO(response.content))
+    return img
 
 # Streamlit app setup
-st.title("GeoTIFF Value Extractor by ZIP Code")
+st.title("Google Earth Engine Streamlit App")
 
-# Provide the URL of the GeoTIFF file (hosted on GitHub in this example)
-geotiff_url = "https://raw.githubusercontent.com/VMantas/IMERGzip/Central1/Data/January%20IMERGF%20Mean.tif"
-st.write(f"Using GeoTIFF file from: {geotiff_url}")
+# Initialize Earth Engine
+initialize_earth_engine()
 
-# User input: ZIP code
-zipcode = st.text_input("Enter a ZIP code:")
+# Get the image
+try:
+    image = get_earth_engine_image()
+    st.image(image, caption='Sentinel-2 Image', use_column_width=True)
+except Exception as e:
+    st.error(f"Error retrieving image from Earth Engine: {str(e)}")
 
-if zipcode:
-    # Convert ZIP code to coordinates
-    coords = zip_to_coords(zipcode)
-    
-    if coords:
-        lat, lon = coords
-        st.write(f"Coordinates for {zipcode}: Lat {lat}, Lon {lon}")
-        
-        # Extract the mean value from the GeoTIFF for the given coordinates
-        try:
-            mean_value = extract_mean_from_geotiff(lat, lon, geotiff_url)
-            if mean_value is not None:
-                st.write(f"Mean value extracted from GeoTIFF: {mean_value:.4f}")
-            else:
-                st.write("No valid data found in the GeoTIFF for the specified location.")
-        except Exception as e:
-            st.error(f"Error extracting data from GeoTIFF: {str(e)}")
-    else:
-        st.error("Invalid ZIP code or unable to retrieve coordinates.")
-        
 st.write("""
-This app extracts the mean pixel value from a GeoTIFF file for a given ZIP code.
-Enter a ZIP code to see the result.
+This app uses Google Earth Engine to display a satellite image of a specific region.
 """)
-
