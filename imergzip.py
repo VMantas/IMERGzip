@@ -1,56 +1,62 @@
-import os
-import ee
 import streamlit as st
-from PIL import Image
-import numpy as np
-import io
+import pandas as pd
+import plotly.express as px
+import requests
+from io import StringIO
 
-# Initialize Earth Engine with environment variable
-def initialize_earth_engine():
-    auth_token = os.getenv('EARTHENGINE_AUTH_TOKEN')
-    if auth_token:
-        ee.Authenticate(token=auth_token)
-    ee.Initialize()
+# Set page title and layout
+st.set_page_config(page_title="Precipitation Data Visualization", layout="wide")
 
-# Function to get an Earth Engine image
-def get_earth_engine_image():
-    # Define a region of interest (ROI) and date range
-    roi = ee.Geometry.Polygon([[
-        [-122.6, 37.5],
-        [-122.3, 37.5],
-        [-122.3, 37.8],
-        [-122.6, 37.8]
-    ]])
-    date_range = ee.DateRange('2022-01-01', '2022-01-31')
+# Function to load data from GitHub
+@st.cache_data
+def load_data(url):
+    response = requests.get(url)
+    data = StringIO(response.text)
+    df = pd.read_csv(data, header=None, names=['ZIP'] + [f'Month_{i}' for i in range(1, 13)])
+    return df
 
-    # Load a Sentinel-2 image
-    image = ee.ImageCollection('COPERNICUS/S2') \
-        .filterBounds(roi) \
-        .filterDate(date_range) \
-        .median()
+# Main app
+def main():
+    st.title("Precipitation Data Visualization")
 
-    # Select a specific band (e.g., true color)
-    image = image.select(['B4', 'B3', 'B2'])
+    # GitHub raw file URL
+    github_url = "https://github.com/VMantas/IMERGzip/blob/Central1/Data/clim_demo.csv"
 
-    # Convert the image to a numpy array
-    image_url = image.getThumbURL({'min': 0, 'max': 3000, 'dimensions': 512})
-    response = ee.data.getTile(image_url)
-    img = Image.open(io.BytesIO(response.content))
-    return img
+    # Load data
+    df = load_data(github_url)
 
-# Streamlit app setup
-st.title("Google Earth Engine Streamlit App")
+    # Display raw data
+    st.subheader("Raw Data")
+    st.dataframe(df)
 
-# Initialize Earth Engine
-initialize_earth_engine()
+    # Melt the dataframe for easier plotting
+    df_melted = df.melt(id_vars=['ZIP'], var_name='Month', value_name='Precipitation')
+    df_melted['Month'] = df_melted['Month'].str.replace('Month_', '')
 
-# Get the image
-try:
-    image = get_earth_engine_image()
-    st.image(image, caption='Sentinel-2 Image', use_column_width=True)
-except Exception as e:
-    st.error(f"Error retrieving image from Earth Engine: {str(e)}")
+    # Select ZIP code
+    selected_zip = st.selectbox("Select ZIP Code", df['ZIP'].unique())
 
-st.write("""
-This app uses Google Earth Engine to display a satellite image of a specific region.
-""")
+    # Filter data for selected ZIP code
+    df_selected = df_melted[df_melted['ZIP'] == selected_zip]
+
+    # Create line chart
+    fig = px.line(df_selected, x='Month', y='Precipitation', title=f"Monthly Precipitation for ZIP Code {selected_zip}")
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Show statistics
+    st.subheader("Precipitation Statistics")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Average Precipitation", f"{df_selected['Precipitation'].mean():.2f}")
+    col2.metric("Minimum Precipitation", f"{df_selected['Precipitation'].min():.2f}")
+    col3.metric("Maximum Precipitation", f"{df_selected['Precipitation'].max():.2f}")
+
+    # Heatmap of all ZIP codes
+    st.subheader("Precipitation Heatmap")
+    fig_heatmap = px.imshow(df.set_index('ZIP').T, 
+                            labels=dict(x="ZIP Code", y="Month", color="Precipitation"),
+                            aspect="auto",
+                            title="Precipitation Heatmap for All ZIP Codes")
+    st.plotly_chart(fig_heatmap, use_container_width=True)
+
+if __name__ == "__main__":
+    main()
