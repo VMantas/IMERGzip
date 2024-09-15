@@ -4,59 +4,47 @@ import plotly.express as px
 import requests
 from io import StringIO
 
-# Set page title and layout
-st.set_page_config(page_title="Precipitation Data Visualization", layout="wide")
+# Set page config
+st.set_page_config(page_title="Precipitation Data", layout="wide")
 
 # Function to load data from GitHub
 @st.cache_data
 def load_data(url):
     response = requests.get(url)
     data = StringIO(response.text)
-    df = pd.read_csv(data, header=None, names=['ZIP'] + [f'Month_{i}' for i in range(1, 13)])
+    df = pd.read_csv(data, header=None, names=['ZIP'] + list(range(1, 13)))
     return df
 
 # Main app
 def main():
-    st.title("Precipitation Data Visualization")
+    st.title("Monthly Precipitation Data")
 
     # GitHub raw file URL
-    github_url = "https://github.com/VMantas/IMERGzip/blob/Central1/Data/clim_demo.csv"
+    github_url = "https://raw.githubusercontent.com/yourusername/yourrepository/main/yourfile.csv"
 
     # Load data
     df = load_data(github_url)
 
-    # Display raw data
-    st.subheader("Raw Data")
-    st.dataframe(df)
+    # User input for ZIP code
+    zip_code = st.text_input("Enter ZIP Code:")
 
-    # Melt the dataframe for easier plotting
-    df_melted = df.melt(id_vars=['ZIP'], var_name='Month', value_name='Precipitation')
-    df_melted['Month'] = df_melted['Month'].str.replace('Month_', '')
+    if zip_code:
+        if int(zip_code) in df['ZIP'].values:
+            # Get data for the specified ZIP code
+            zip_data = df[df['ZIP'] == int(zip_code)].iloc[0, 1:].reset_index()
+            zip_data.columns = ['Month', 'Precipitation']
+            zip_data['Month'] = zip_data['Month'] + 1  # Adjust month numbers
 
-    # Select ZIP code
-    selected_zip = st.selectbox("Select ZIP Code", df['ZIP'].unique())
-
-    # Filter data for selected ZIP code
-    df_selected = df_melted[df_melted['ZIP'] == selected_zip]
-
-    # Create line chart
-    fig = px.line(df_selected, x='Month', y='Precipitation', title=f"Monthly Precipitation for ZIP Code {selected_zip}")
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Show statistics
-    st.subheader("Precipitation Statistics")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Average Precipitation", f"{df_selected['Precipitation'].mean():.2f}")
-    col2.metric("Minimum Precipitation", f"{df_selected['Precipitation'].min():.2f}")
-    col3.metric("Maximum Precipitation", f"{df_selected['Precipitation'].max():.2f}")
-
-    # Heatmap of all ZIP codes
-    st.subheader("Precipitation Heatmap")
-    fig_heatmap = px.imshow(df.set_index('ZIP').T, 
-                            labels=dict(x="ZIP Code", y="Month", color="Precipitation"),
-                            aspect="auto",
-                            title="Precipitation Heatmap for All ZIP Codes")
-    st.plotly_chart(fig_heatmap, use_container_width=True)
+            # Create line chart
+            fig = px.line(zip_data, x='Month', y='Precipitation', 
+                          title=f"Monthly Precipitation for ZIP Code {zip_code}",
+                          labels={'Precipitation': 'Precipitation', 'Month': 'Month'},
+                          markers=True)
+            
+            fig.update_layout(xaxis = dict(tickmode = 'linear', tick0 = 1, dtick = 1))
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.error("ZIP code not found in the dataset.")
 
 if __name__ == "__main__":
     main()
