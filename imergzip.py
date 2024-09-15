@@ -20,7 +20,7 @@ def main():
     st.title("Monthly Precipitation Data")
 
     # GitHub raw file URL
-    github_url = "https://raw.githubusercontent.com/yourusername/yourrepository/main/yourfile.csv"
+    github_url = "https://github.com/VMantas/IMERGzip/blob/Central1/Data/clim_demo.csv"
 
     # Load data
     df = load_data(github_url)
