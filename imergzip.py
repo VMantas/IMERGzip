@@ -1,61 +1,34 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import requests
-import io
 
-# Set page config
-st.set_page_config(page_title="Precipitation Data", layout="wide")
+# Title for the app
+st.title("CSV File Plotter")
 
-# Function to load data from GitHub
-@st.cache_data
-def load_data(url):
-    response = requests.get(url)
-    data = io.StringIO(response.text)
+# Upload the CSV file
+uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+
+if uploaded_file is not None:
+    # Read the CSV into a DataFrame
+    df = pd.read_csv(uploaded_file)
     
-    # Read the CSV file line by line
-    zip_data = {}
-    for line in data:
-        values = line.strip().split(',')
-        if len(values) == 13:  # Ensure we have ZIP + 12 months of data
-            zip_code = values[0]
-            precipitation = [float(v) for v in values[1:]]
-            zip_data[zip_code] = precipitation
-    
-    return zip_data
+    # Show a preview of the data
+    st.write("Here is a preview of the uploaded data:")
+    st.write(df.head())
 
-# Main app
-def main():
-    st.title("Monthly Precipitation Data")
+    # Ensure the CSV has the expected format
+    if df.shape[1] == 13:
+        # Select which row to plot (first column is the ID)
+        row_id = st.selectbox('Select row ID to plot:', df.iloc[:, 0])
+        
+        # Extract the row data (excluding the ID)
+        row_data = df[df.iloc[:, 0] == row_id].iloc[:, 1:].values.flatten()
+        
+        # Plot the data using Plotly
+        fig = px.line(x=list(range(1, 13)), y=row_data, 
+                      labels={'x': 'Column Index', 'y': 'Value'},
+                      title=f'Plot for Row ID {row_id}')
+        st.plotly_chart(fig)
+    else:
+        st.error("The CSV file should have exactly 13 columns.")
 
-    # GitHub raw file URL
-    github_url = "https://raw.githubusercontent.com/yourusername/yourrepository/main/yourfile.csv"
-
-    # Load data
-    data = load_data(github_url)
-
-    # User input for ZIP code
-    zip_code = st.text_input("Enter ZIP Code:")
-
-    if zip_code:
-        if zip_code in data:
-            # Get data for the specified ZIP code
-            precipitation = data[zip_code]
-            df = pd.DataFrame({
-                'Month': range(1, 13),
-                'Precipitation': precipitation
-            })
-
-            # Create line chart
-            fig = px.line(df, x='Month', y='Precipitation', 
-                          title=f"Monthly Precipitation for ZIP Code {zip_code}",
-                          labels={'Precipitation': 'Precipitation', 'Month': 'Month'},
-                          markers=True)
-            
-            fig.update_layout(xaxis = dict(tickmode = 'linear', tick0 = 1, dtick = 1))
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.error("ZIP code not found in the dataset.")
-
-if __name__ == "__main__":
-    main()
