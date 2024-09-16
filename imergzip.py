@@ -34,7 +34,7 @@ st.title("IMERG Precipitation Climatology (Prototype)")
 # Add a description for IMERG
 st.markdown("""
 ### What is IMERG?
-The Integrated Multi-satellite Retrievals for GPM (IMERG) is a product of the Global Precipitation Measurement (GPM) mission. It combines satellite observations from a constellation of satellites to provide global estimates of precipitation. This allows scientists and researchers to track precipitation trends, identify extreme weather events, and monitor water resources across the globe in near real-time. Use the data in this website for educational purposes only. NO quality control was done. This is NOT an official wesite or affiliated with NASA in any way.
+The Integrated Multi-satellite Retrievals for GPM (IMERG) is a product of the Global Precipitation Measurement (GPM) mission. It combines satellite observations from a constellation of satellites to provide global estimates of precipitation. This allows scientists and researchers to track precipitation trends, identify extreme weather events, and monitor water resources across the globe in near real-time. Use the data in this website for educational purposes only. NO quality control was done. This is NOT an official website or affiliated with NASA in any way.
 
 More information about IMERG can be found on the [NASA IMERG website](https://gpm.nasa.gov/data/imerg).
 """)
