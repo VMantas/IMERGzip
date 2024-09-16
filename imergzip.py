@@ -76,7 +76,7 @@ if zip_code:
             normal_precipitation_sept = 4.3  # Example normal value (in)
             current_precipitation_sept = 1.7 #precipitation_values[8]  # September's precipitation value
 
-            st.subheader(f"September Precipitation: {current_precipitation_sept} mm (40% below normal)")
+            st.subheader(f"September Precipitation: {current_precipitation_sept} mm ")
 
             # Create the gauge chart
             fig_gauge = go.Figure(go.Indicator(
