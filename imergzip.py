@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 import io
+import plotly.express as px
 
 # URL to the CSV file
 url = "https://github.com/VMantas/IMERGzip/raw/Central1/Data/clim_demo.csv"
@@ -42,11 +43,22 @@ if zip_code:
         
         if precipitation_values:
             st.subheader(f"Precipitation values for ZIP code: {zip_code}")
-            # Display the monthly precipitation values
+            
+            # Create a DataFrame for the precipitation values
             months = ['January', 'February', 'March', 'April', 'May', 'June', 
                       'July', 'August', 'September', 'October', 'November', 'December']
-            precipitation_dict = dict(zip(months, precipitation_values))
-            st.table(precipitation_dict.items())
+            precipitation_df = pd.DataFrame({
+                'Month': months,
+                'Precipitation': precipitation_values
+            })
+            
+            # Create a bar graph using plotly
+            fig = px.bar(precipitation_df, x='Month', y='Precipitation', 
+                         labels={'Precipitation': 'Precipitation (mm)'}, 
+                         title=f'Monthly Precipitation for ZIP Code {zip_code}')
+            
+            # Display the bar graph
+            st.plotly_chart(fig)
         else:
             st.error("No data found for this ZIP code.")
     except ValueError:
