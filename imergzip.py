@@ -1,28 +1,36 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import requests
 
-# Function to load and process the CSV file
+# Function to load and process the CSV file from GitHub
 @st.cache_data
-def load_data(file_path):
-    # Load the CSV file without headers
-    df = pd.read_csv(file_path, header=None)
+def load_data():
+    # URL of the raw CSV file on GitHub
+    url = "https://raw.githubusercontent.com/VMantas/IMERGzip/Central1/Data/clim_demo.csv"
     
-    # Assign column names
-    df.columns = ['zip_code'] + [f'month_{i+1}' for i in range(12)]
+    # Fetch the content of the file
+    response = requests.get(url)
     
-    return df
+    if response.status_code == 200:
+        # Load the CSV content into a pandas DataFrame
+        df = pd.read_csv(pd.compat.StringIO(response.text), header=None)
+        
+        # Assign column names
+        df.columns = ['zip_code'] + [f'month_{i+1}' for i in range(12)]
+        
+        return df
+    else:
+        st.error("Failed to fetch data from the server.")
+        return None
 
 # Set up the Streamlit app
 st.title("Monthly Precipitation Viewer")
 
-# File uploader for CSV file
-uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+# Load the data
+df = load_data()
 
-if uploaded_file is not None:
-    # Load the data
-    df = load_data(uploaded_file)
-    
+if df is not None:
     # User input for zip code
     zip_code = st.text_input("Enter a ZIP code:")
     
@@ -46,4 +54,4 @@ if uploaded_file is not None:
         else:
             st.error("ZIP code not found in the dataset.")
 else:
-    st.info("Please upload a CSV file to proceed.")
+    st.error("Failed to load data. Please try again later.")
