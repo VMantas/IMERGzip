@@ -2,36 +2,48 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Title for the app
-st.title("CSV File Plotter from GitHub")
-
-# GitHub raw CSV link
-csv_url = "https://raw.githubusercontent.com/VMantas/IMERGzip/Central1/Data/clim_demo.csv"
-
-# Read the CSV from GitHub directly
+# Function to load and process the CSV file
 @st.cache_data
-def load_data(url):
-    return pd.read_csv(url)
-
-df = load_data(csv_url)
-
-# Show a preview of the data
-st.write("Here is a preview of the data from GitHub:")
-st.write(df.head())
-
-# Ensure the CSV has the expected format
-if df.shape[1] == 13:
-    # Select which row to plot (first column is the ID)
-    row_id = st.selectbox('Select row ID to plot:', df.iloc[:, 0])
+def load_data(file_path):
+    # Load the CSV file without headers
+    df = pd.read_csv(file_path, header=None)
     
-    # Extract the row data (excluding the ID)
-    row_data = df[df.iloc[:, 0] == row_id].iloc[:, 1:].values.flatten()
+    # Assign column names
+    df.columns = ['zip_code'] + [f'month_{i+1}' for i in range(12)]
     
-    # Plot the data using Plotly
-    fig = px.line(x=list(range(1, 13)), y=row_data, 
-                  labels={'x': 'Column Index', 'y': 'Value'},
-                  title=f'Plot for Row ID {row_id}')
-    st.plotly_chart(fig)
+    return df
+
+# Set up the Streamlit app
+st.title("Monthly Precipitation Viewer")
+
+# File uploader for CSV file
+uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+
+if uploaded_file is not None:
+    # Load the data
+    df = load_data(uploaded_file)
+    
+    # User input for zip code
+    zip_code = st.text_input("Enter a ZIP code:")
+    
+    if zip_code:
+        # Check if the zip code exists in the dataset
+        if int(zip_code) in df['zip_code'].values:
+            # Get the data for the specified zip code
+            zip_data = df[df['zip_code'] == int(zip_code)].iloc[0]
+            
+            # Prepare data for plotting
+            months = [f'Month {i}' for i in range(1, 13)]
+            precipitation = zip_data[1:].tolist()
+            
+            # Create a bar chart using Plotly
+            fig = px.bar(x=months, y=precipitation,
+                         labels={'x': 'Month', 'y': 'Precipitation'},
+                         title=f'Monthly Precipitation for ZIP Code {zip_code}')
+            
+            # Display the plot
+            st.plotly_chart(fig)
+        else:
+            st.error("ZIP code not found in the dataset.")
 else:
-    st.error("The CSV file should have exactly 13 columns.")
-
+    st.info("Please upload a CSV file to proceed.")
