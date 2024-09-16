@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
+import io
 
 # URL to the CSV file
 url = "https://github.com/VMantas/IMERGzip/raw/Central1/Data/clim_demo.csv"
@@ -10,8 +11,8 @@ url = "https://github.com/VMantas/IMERGzip/raw/Central1/Data/clim_demo.csv"
 def load_data():
     response = requests.get(url)
     data = response.content.decode('utf-8')
-    # Read the CSV data into a pandas DataFrame
-    df = pd.read_csv(pd.compat.StringIO(data), header=None)
+    # Use io.StringIO to convert the string data into a file-like object for pandas
+    df = pd.read_csv(io.StringIO(data), header=None)
     return df
 
 # Function to get the precipitation values for a given ZIP code
