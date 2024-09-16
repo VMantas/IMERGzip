@@ -82,7 +82,7 @@ if zip_code:
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number+delta",
                 value=current_precipitation_sept,
-                delta={'reference': normal_precipitation_sept, 'relative': True, 'position': "top"},
+                delta={'reference': normal_precipitation_sept, 'relative': True, 'position': "top",'valueformat': '.0%'}},
                 gauge={
                     'axis': {'range': [0, normal_precipitation_sept], 'tickwidth': 1, 'tickcolor': "black"},
                     'bar': {'color': "darkblue"},
