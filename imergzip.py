@@ -41,7 +41,7 @@ More information about IMERG can be found on the [NASA IMERG website](https://gp
 
 # Add an image related to IMERG
 st.image("https://gpm.nasa.gov/sites/default/files/styles/550_width/public/2020-02/GPM_Logo_Transparent.png?itok=rLVGY90d", 
-         caption="NASA IMERG (Source: gpm.nasa.gov)")
+         caption="NASA GPM logo (Source: gpm.nasa.gov)", width=300)
 
 # User input for the ZIP code
 zip_code = st.text_input("Enter a ZIP code:", "")
