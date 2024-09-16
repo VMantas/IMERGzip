@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import requests
+from io import StringIO
 
 # Function to load and process the CSV file from GitHub
 @st.cache_data
@@ -14,7 +15,7 @@ def load_data():
     
     if response.status_code == 200:
         # Load the CSV content into a pandas DataFrame
-        df = pd.read_csv(pd.compat.StringIO(response.text), header=None)
+        df = pd.read_csv(StringIO(response.text), header=None)
         
         # Assign column names
         df.columns = ['zip_code'] + [f'month_{i+1}' for i in range(12)]
