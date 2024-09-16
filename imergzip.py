@@ -71,6 +71,35 @@ if zip_code:
             
             # Display the bar graph
             st.plotly_chart(fig)
+            # Highlight September's precipitation
+            normal_precipitation_sept = 100  # Example normal value (mm)
+            current_precipitation_sept = precipitation_values[8]  # September's precipitation value
+
+            st.subheader(f"September Precipitation: {current_precipitation_sept} mm (40% below normal)")
+
+            # Create the gauge chart
+            fig_gauge = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=current_precipitation_sept,
+                delta={'reference': normal_precipitation_sept, 'relative': True, 'position': "top"},
+                gauge={
+                    'axis': {'range': [0, normal_precipitation_sept], 'tickwidth': 1, 'tickcolor': "black"},
+                    'bar': {'color': "darkblue"},
+                    'steps': [
+                        {'range': [0, normal_precipitation_sept * 0.6], 'color': "lightcoral"},
+                        {'range': [normal_precipitation_sept * 0.6, normal_precipitation_sept], 'color': "lightgreen"}
+                    ],
+                    'threshold': {
+                        'line': {'color': "red", 'width': 4},
+                        'thickness': 0.75,
+                        'value': current_precipitation_sept},
+                },
+                title={'text': "September Precipitation"},
+                domain={'x': [0, 1], 'y': [0, 1]}
+            ))
+
+            # Display the gauge chart
+            st.plotly_chart(fig_gauge)
         else:
             st.error("No data found for this ZIP code.")
     except ValueError:
